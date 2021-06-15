@@ -15,6 +15,14 @@ defmodule SegmentTree do
     query(tree, l, h, &sum_aggregation/3)
   end
 
+  @doc """
+  Examples
+    iex> SegmentTree.query(SegmentTree.new([1,2,3,4], &SegmentTree.mul_aggregation/3), 1, 2, &SegmentTree.mul_aggregation/3)
+    6
+
+    iex> SegmentTree.query(SegmentTree.new([1,2,3,4], &SegmentTree.mul_aggregation/3), 1, 3, &SegmentTree.mul_aggregation/3)
+    24
+  """
   def query(
         %SegmentTree{root: %Vertex{left: left, right: right}, low: low, high: high} = tree,
         l,
@@ -56,6 +64,22 @@ defmodule SegmentTree do
     value
   end
 
+  def mul_aggregation(nil, nil, nil) do
+    1
+  end
+
+  def mul_aggregation(nil, %SegmentTree{} = left, %SegmentTree{} = right) do
+    get_aggregation(left) * get_aggregation(right)
+  end
+
+  def mul_aggregation(nil, left, right) do
+    left * right
+  end
+
+  def mul_aggregation(value, nil, nil) do
+    value
+  end
+
   @doc """
   ## Example
 
@@ -65,6 +89,10 @@ defmodule SegmentTree do
   """
   def new(array) do
     new(array, 0, length(array) - 1, &sum_aggregation/3)
+  end
+
+  def new(array, aggregate_function) do
+    new(array, 0, length(array) - 1, aggregate_function)
   end
 
   def new([leaf] = _array, low, high, aggregate_function) do
