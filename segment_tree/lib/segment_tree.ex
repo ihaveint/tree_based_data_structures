@@ -4,12 +4,51 @@ defmodule SegmentTree do
   require Vertex
 
   @doc """
-  Examples
-    iex> SegmentTree.query(SegmentTree.new([1,2,3,4]), 0, 2)
-    6
+  Example
 
-    iex> SegmentTree.query(SegmentTree.new([1,2,3,4]), 3, 3)
-    4
+  iex> SegmentTree.get_aggregation(SegmentTree.update(SegmentTree.new([1,2,3,4]) , 1, 10, &SegmentTree.sum_aggregation/3))
+  18
+  """
+  def update(
+        %SegmentTree{root: %Vertex{left: left, right: right}, low: low, high: high} = tree,
+        index,
+        new_value,
+        aggregate_function
+      ) do
+    if low > index or high < index do
+      tree
+    else
+      if low == high do
+        %SegmentTree{root: %Vertex{value: new_value, left: nil, right: nil}, low: low, high: high}
+      else
+        left_update = update(left, index, new_value, aggregate_function)
+        right_update = update(right, index, new_value, aggregate_function)
+
+        %SegmentTree{
+          root: %Vertex{
+            value:
+              aggregate_function.(
+                nil,
+                SegmentTree.get_aggregation(left_update),
+                SegmentTree.get_aggregation(right_update)
+              ),
+            left: left_update,
+            right: right_update
+          },
+          low: low,
+          high: high
+        }
+      end
+    end
+  end
+
+  @doc """
+  Examples
+  iex> SegmentTree.query(SegmentTree.new([1,2,3,4]), 0, 2)
+  6
+
+  iex> SegmentTree.query(SegmentTree.new([1,2,3,4]), 3, 3)
+  4
   """
   def query(%SegmentTree{} = tree, l, h) do
     query(tree, l, h, &sum_aggregation/3)
@@ -17,11 +56,11 @@ defmodule SegmentTree do
 
   @doc """
   Examples
-    iex> SegmentTree.query(SegmentTree.new([1,2,3,4], &SegmentTree.mul_aggregation/3), 1, 2, &SegmentTree.mul_aggregation/3)
-    6
+  iex> SegmentTree.query(SegmentTree.new([1,2,3,4], &SegmentTree.mul_aggregation/3), 1, 2, &SegmentTree.mul_aggregation/3)
+  6
 
-    iex> SegmentTree.query(SegmentTree.new([1,2,3,4], &SegmentTree.mul_aggregation/3), 1, 3, &SegmentTree.mul_aggregation/3)
-    24
+  iex> SegmentTree.query(SegmentTree.new([1,2,3,4], &SegmentTree.mul_aggregation/3), 1, 3, &SegmentTree.mul_aggregation/3)
+  24
   """
   def query(
         %SegmentTree{root: %Vertex{left: left, right: right}, low: low, high: high} = tree,
@@ -48,43 +87,55 @@ defmodule SegmentTree do
     value
   end
 
-  def sum_aggregation(nil, nil, nil) do
-    0
+  def get_aggregation(nil) do
+    nil
   end
 
   def sum_aggregation(nil, %SegmentTree{} = left, %SegmentTree{} = right) do
     get_aggregation(left) + get_aggregation(right)
   end
 
-  def sum_aggregation(nil, left, right) do
-    left + right
-  end
-
   def sum_aggregation(value, nil, nil) do
     value
   end
 
-  def mul_aggregation(nil, nil, nil) do
-    1
+  def sum_aggregation(nil, left, nil) do
+    left
+  end
+
+  def sum_aggregation(nil, nil, right) do
+    right
+  end
+
+  def sum_aggregation(nil, left, right) do
+    left + right
   end
 
   def mul_aggregation(nil, %SegmentTree{} = left, %SegmentTree{} = right) do
     get_aggregation(left) * get_aggregation(right)
   end
 
-  def mul_aggregation(nil, left, right) do
-    left * right
-  end
-
   def mul_aggregation(value, nil, nil) do
     value
+  end
+
+  def mul_aggregation(nil, nil, right) do
+    right
+  end
+
+  def mul_aggregation(nil, left, nil) do
+    left
+  end
+
+  def mul_aggregation(nil, left, right) do
+    left * right
   end
 
   @doc """
   ## Example
 
-      iex> SegmentTree.get_aggregation(SegmentTree.new([1,2,3,4]))
-      10
+  iex> SegmentTree.get_aggregation(SegmentTree.new([1,2,3,4]))
+  10
 
   """
   def new(array) do
