@@ -29,8 +29,8 @@ defmodule SegmentTree do
             value:
               aggregate_function.(
                 nil,
-                SegmentTree.get_aggregation(left_update),
-                SegmentTree.get_aggregation(right_update)
+                left_update,
+                right_update
               ),
             left: left_update,
             right: right_update
